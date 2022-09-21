@@ -1,7 +1,6 @@
-import { SPMHandler } from './spmHandler';
 import { SPMNode } from './spmNode';
 import { InitOption } from './type';
-import { getSpmPre, getSpmUrl } from './utils';
+import { getSpmPre, getSpmUrl, report } from './utils';
 
 export class SPM {
     private exposeOnce = true;
@@ -10,11 +9,10 @@ export class SPM {
     private spmUrl = '';
     private threshold = 0.5;
     private io?: IntersectionObserver;
-    private multipleExpose: any[] = [];
     //TODO  need cache
-    private cache: WeakMap<Element | EventTarget, SPMNode> = new WeakMap();
-    private spmA = '';
-    private spmB = '';
+    private clickEleCache: WeakMap<HTMLElement | EventTarget, SPMNode> = new WeakMap();
+    private exposeEleCache: WeakMap<HTMLElement | EventTarget, SPMNode> = new WeakMap();
+    private functionExposeCache: Set<string> = new Set();
 
 
     constructor(initOptions: InitOption) {
@@ -29,6 +27,7 @@ export class SPM {
         this.initExposeMonitor();
         this.initSpecificElementClickMonitor();
         this.fillWindow();
+        report('PV');
     }
     initWindow() {
         window.spmExternal = {};
@@ -49,10 +48,10 @@ export class SPM {
     }
     clickHandler(event: Event) {
         const element = event.target!;
-        let cachedSpmNode = this.cache.get(element);
+        let cachedSpmNode = this.clickEleCache.get(element);
         if (!cachedSpmNode) {
             cachedSpmNode = new SPMNode(element);
-            this.cache.set(element, cachedSpmNode);
+            this.clickEleCache.set(element, cachedSpmNode);
         }
         //TODO reaction
         cachedSpmNode.reportClick();
@@ -60,15 +59,14 @@ export class SPM {
     initExposeMonitor() {
         this.io = new IntersectionObserver(this.exposeHandler.bind(this), { root: document.body, threshold: this.threshold })
         const exposeEleArr = Array.from(document.querySelectorAll('[data-spm-expose]'));
-        if (!this.exposeOnce) {
-            this.multipleExpose = this.multipleExpose.concat(...exposeEleArr);
-        } else {
-            exposeEleArr.forEach(ele => {
-                if ((ele as HTMLElement).dataset.hasOwnProperty('spmForceExpose')) {
-                    this.multipleExpose.push(ele);
-                }
-            })
-        }
+        exposeEleArr.forEach(ele => {
+            let cachedSpmNode = this.exposeEleCache.get(ele);
+            if (!cachedSpmNode) {
+                cachedSpmNode = new SPMNode(ele);
+                cachedSpmNode.setExpose({ exposeOnce: this.exposeOnce });
+                this.exposeEleCache.set(ele, cachedSpmNode);
+            }
+        })
         exposeEleArr.forEach(ele => {
             this.io!.observe(ele);
         });
@@ -76,15 +74,14 @@ export class SPM {
     exposeHandler(entries: IntersectionObserverEntry[]) {
         entries.forEach(entry => {
             const element = entry.target;
-            // if (this.isValidSpmNode(element)) {
-            //     const spmId = this.generateSpmId(element as HTMLElement);
-            //     // fetch()
-            //     // this.hooks.expose.call({ spmId });
-            // }
+            const cachedSpmNode = this.exposeEleCache.get(element);
+            if (cachedSpmNode) {
+                cachedSpmNode.reportExpose();
+            }
         })
     }
     initSpecificElementClickMonitor() {
-
+        //TODO 处理被stopPropagation包裹的埋点元素
     }
     fillWindow() {
         window.spmInfo = { reportUrl: this.reportUrl, spmPre: this.spmPre, spmUrl: this.spmUrl };
@@ -94,31 +91,18 @@ export class SPM {
         };
     }
     spmClick(spm = '', params: string) {
-        console.log(spm, params)
+        report('expose', { spmCnt: `${spm.split('.').slice(0, 2).join('.')}`, spm, spmExt: params || '' });
     }
     spmExpose(spm = '', params?: string, forceExpose = false) {
-        console.log(spm, params, forceExpose)
+        if (this.exposeOnce) {
+            if (!forceExpose) {
+                if (this.functionExposeCache.has(spm)) {
+                    return;
+                } else {
+                    this.functionExposeCache.add(spm);
+                }
+            }
+        }
+        report('expose', { spmCnt: `${spm.split('.').slice(0, 2).join('.')}`, spm, spmExt: params || '' });
     }
-    getSourceParams() {
-        const spmPre = this.spmPre ? `spm_pre=${this.spmPre}` : '';
-        const spmUrl = this.spmUrl ? `spm_url=${this.spmUrl}` : '';
-        const spmCnt = `spm_cnt=${this.spmA}.${this.spmB}`;
-        const params = [spmPre, spmUrl, spmCnt].filter(item => item).join('&');
-        return `${params}`;
-    }
-    getSpmParams(spmInfo: any, data = '') {
-        const { spmA, spmB, spmC, spmD } = spmInfo;
-        console.log(spmA);
-        // const spm = `spm=${[this.spmA, this.spmB, this.spmC, this.spmD].filter(item => item).join('.')}`;
-        // const spmData = data ? `spm-ext=${data}` : '';
-        // return `${[spm, spmData].filter(item => item).join('&')}`
-        return '';
-    }
-    reportPV() {
-        // fetch(`${this.reportUrl}?${this.getSourceParams()}`)
-    }
-    report() {
-        // fetch(`${this.reportUrl}?${this.getSourceParams()}${this.getSpmParams()}`)
-    }
-
 }

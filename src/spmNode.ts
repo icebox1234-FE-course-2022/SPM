@@ -1,14 +1,13 @@
-import { SPMHandler } from "./spmHandler";
-
-export class SPMNode extends SPMHandler {
+type SPMElement = EventTarget | HTMLElement;
+export class SPMNode  {
     spmA = '';
     spmB = '';
     spmC = '';
     spmD = '';
     exposeOnce = false;
     exposed = false;
-    constructor(element: Element | EventTarget | HTMLElement) {
-        super();
+    constructor(element: SPMElement) {
+        this.filterSpmInfo(element);
     }
     generateSpmId(element: HTMLElement) {
         let ids = Array.from<string>({ length: 4 });
@@ -57,20 +56,23 @@ export class SPMNode extends SPMHandler {
         }
         return true;
     }
-    filterSpmInfo(element: HTMLElement) {
+    filterSpmInfo(element: SPMElement) {
         const spmInfo: any = {};
-        Object.keys(element.dataset).filter(item => {
+        Object.keys((element as HTMLElement).dataset).filter(item => {
             return item.indexOf('spm') !== -1;
         }).forEach(item => {
-            spmInfo[item] = element.dataset[item];
+            spmInfo[item] = (element as HTMLElement).dataset[item];
         });
         return spmInfo;
+    }
+    setExpose(exposeOptions: { exposeOnce: boolean }) {
+        this.exposeOnce = exposeOptions.exposeOnce;
     }
     reportClick() { }
     reportExpose() {
         if (this.exposeOnce && this.exposed) {
             return;
         }
-        
+
     }
 }

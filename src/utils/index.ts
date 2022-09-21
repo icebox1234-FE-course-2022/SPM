@@ -1,1 +1,2 @@
-export { getSpmPre, getSpmUrl } from './getSpmSource'
+export { getSpmPre, getSpmUrl } from './getSpmSource';
+export { report } from './report';
