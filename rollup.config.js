@@ -5,7 +5,7 @@ export default {
     input: "./src/main.ts",
     plugins: [
         typescript({
-            exclude: "node_modules/**",
+            include: 'src/**',
             typescript: require("typescript")
         }),
         sourceMaps()
@@ -14,7 +14,7 @@ export default {
         {
             format: "umd",
             file: "dist/bundle.umd.js",
-            name: 'spm1111',
+            name: 'spm',
             sourcemap: true
         }
     ]

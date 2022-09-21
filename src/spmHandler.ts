@@ -1,15 +1,5 @@
-import { SPMHandler } from "./spmHandler";
-
-export class SPMNode extends SPMHandler {
-    spmA = '';
-    spmB = '';
-    spmC = '';
-    spmD = '';
-    exposeOnce = false;
-    exposed = false;
-    constructor(element: Element | EventTarget | HTMLElement) {
-        super();
-    }
+export class SPMHandler {
+    constructor() { };
     generateSpmId(element: HTMLElement) {
         let ids = Array.from<string>({ length: 4 });
         let curEle = element;
@@ -65,12 +55,5 @@ export class SPMNode extends SPMHandler {
             spmInfo[item] = element.dataset[item];
         });
         return spmInfo;
-    }
-    reportClick() { }
-    reportExpose() {
-        if (this.exposeOnce && this.exposed) {
-            return;
-        }
-        
     }
 }
