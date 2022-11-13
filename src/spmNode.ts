@@ -1,13 +1,16 @@
+import { report } from "./utils";
+
+
 type SPMElement = EventTarget | HTMLElement;
-export class SPMNode  {
+export class SPMNode {
     spmA = '';
     spmB = '';
     spmC = '';
     spmD = '';
     exposeOnce = false;
     exposed = false;
+    forceExpose = false;
     constructor(element: SPMElement) {
-        this.filterSpmInfo(element);
     }
     generateSpmId(element: HTMLElement) {
         let ids = Array.from<string>({ length: 4 });
@@ -41,7 +44,15 @@ export class SPMNode  {
             }
         }
         findSpmPath(3);
-        return this.isValidSpmInfo(ids) ? ids.filter(item => item).join('.') : '';
+        if (this.isValidSpmInfo(ids)) {
+            const [_spmA, _spmB, _spmC, _spmD] = ids;
+            this.spmA = _spmA || '';
+            this.spmB = _spmB || '';
+            this.spmC = _spmC || '';
+            this.spmD = _spmD || '';
+            return ids.filter(item => item).join('.');
+        }
+        return '';
     }
     isValidSpmNode(spmInfo: any) {
         const { spmc, spmd, spmExpose } = spmInfo;
@@ -68,7 +79,10 @@ export class SPMNode  {
     setExpose(exposeOptions: { exposeOnce: boolean }) {
         this.exposeOnce = exposeOptions.exposeOnce;
     }
-    reportClick() { }
+    reportClick() {
+        // const spmInfo = this.filterSpmInfo()
+        report('click')
+    }
     reportExpose() {
         if (this.exposeOnce && this.exposed) {
             return;

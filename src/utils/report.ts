@@ -3,10 +3,11 @@ export function report(action: 'click' | 'expose' | 'PV', data?: { spmCnt: strin
     const { spmCnt = '', spmExt = '', spm = '' } = data ?? {};
     const reportSpmPre = spmPre ? `spm_pre=${spmPre}` : '';
     const reportSpmUrl = spmUrl ? `spm_url=${spmUrl}` : '';
+    const common = `${reportUrl}?${[reportSpmPre, reportSpmUrl, spmCnt].filter(item => item).join('&')}`;
     if (action === 'PV') {
-        fetch(`${reportUrl}?${[reportSpmPre, reportSpmUrl, spmCnt].filter(item => item).join('&')}`);
+        fetch(`${common}`);
     } else {
         const reportSpmExt = spmExt ? `&${spmExt}` : '';
-        fetch(`${reportUrl}?${[reportSpmPre, reportSpmUrl, spmCnt].filter(item => item).join('&')}&spm_action=${action}$spm=${spm}${reportSpmExt}`);
+        fetch(`${common}&spm_action=${action}$spm=${spm}${reportSpmExt}`);
     }
 }

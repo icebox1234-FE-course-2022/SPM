@@ -25,9 +25,7 @@ export class SPM {
         this.initSource();
         this.initClickMonitor();
         this.initExposeMonitor();
-        this.initSpecificElementClickMonitor();
         this.fillWindow();
-        report('PV');
     }
     initWindow() {
         window.spmExternal = {};
@@ -57,19 +55,27 @@ export class SPM {
         cachedSpmNode.reportClick();
     }
     initExposeMonitor() {
-        this.io = new IntersectionObserver(this.exposeHandler.bind(this), { root: document.body, threshold: this.threshold })
-        const exposeEleArr = Array.from(document.querySelectorAll('[data-spm-expose]'));
-        exposeEleArr.forEach(ele => {
-            let cachedSpmNode = this.exposeEleCache.get(ele);
-            if (!cachedSpmNode) {
-                cachedSpmNode = new SPMNode(ele);
-                cachedSpmNode.setExpose({ exposeOnce: this.exposeOnce });
-                this.exposeEleCache.set(ele, cachedSpmNode);
+        this.io = new IntersectionObserver(this.exposeHandler.bind(this), { root: document.body, threshold: this.threshold });
+        let flag = false;
+        requestAnimationFrame(() => {
+            if (!flag) {
+                flag = true;
+                const timer = setTimeout(() => {
+                    clearTimeout(timer);
+                    flag = false;
+                    const exposeEleArr = Array.from(document.querySelectorAll('[data-spm-expose]'));
+                    exposeEleArr.forEach(ele => {
+                        let cachedSpmNode = this.exposeEleCache.get(ele);
+                        if (!cachedSpmNode) {
+                            cachedSpmNode = new SPMNode(ele);
+                            cachedSpmNode.setExpose({ exposeOnce: this.exposeOnce });
+                            this.exposeEleCache.set(ele, cachedSpmNode);
+                            this.io?.observe(ele);
+                        }
+                    })
+                }, 100);
             }
         })
-        exposeEleArr.forEach(ele => {
-            this.io!.observe(ele);
-        });
     }
     exposeHandler(entries: IntersectionObserverEntry[]) {
         entries.forEach(entry => {
@@ -79,9 +85,6 @@ export class SPM {
                 cachedSpmNode.reportExpose();
             }
         })
-    }
-    initSpecificElementClickMonitor() {
-        //TODO 处理被stopPropagation包裹的埋点元素
     }
     fillWindow() {
         window.spmInfo = { reportUrl: this.reportUrl, spmPre: this.spmPre, spmUrl: this.spmUrl };
